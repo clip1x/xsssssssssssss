@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum avec XSS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .login-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], input[type="password"] {
+            padding: 10px;
+            width: 200px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #5cb85c;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .message-container {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+
+        .user-message {
+            background-color: #cce5ff;
+        }
+
+        .admin-message {
+            background-color: #f8d7da;
+        }
+
+        .post-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        input[type="text"] {
+            width: 60%;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Forum de discussion avec XSS</h1>
+
+        <!-- Formulaire de connexion -->
+        <div class="login-container" id="login-form">
+            <h2>Connexion</h2>
+            <form id="login" onsubmit="return handleLogin(event)">
+                <input type="text" id="username" placeholder="Nom d'utilisateur" required><br>
+                <input type="password" id="password" placeholder="Mot de passe" required><br>
+                <input type="submit" value="Se connecter">
+            </form>
+            <p id="error-msg" class="error" style="display: none;">Identifiants incorrects !</p>
+        </div>
+
+        <!-- Interface de message après connexion -->
+        <div id="chat-container" style="display:none;">
+            <h2>Poster un message</h2>
+            <form id="message-form" onsubmit="return postMessage(event)">
+                <input type="text" id="message" placeholder="Écrivez votre message..." required><br>
+                <input type="submit" value="Envoyer">
+            </form>
+
+            <div class="message-container" id="messages"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isAdmin = false;
+
+        // Fonction pour gérer la connexion
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Vérification des identifiants
+            if (username === 'User' && password === 'User') {
+                currentUser = username;
+                isAdmin = false;
+            } else if (username === 'Admin' && password === 'Admin') {
+                currentUser = username;
+                isAdmin = true;
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+                return;
+            }
+
+            // Masquer la connexion et afficher la zone de discussion
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'block';
+        }
+
+        // Fonction pour poster un message
+        function postMessage(event) {
+            event.preventDefault();
+
+            const message = document.getElementById('message').value;
+
+            // Créer un nouveau message avec la faille XSS (injecte le message avec HTML brut)
+            const messageBox = document.createElement('div');
+            messageBox.classList.add('message', isAdmin ? 'admin-message' : 'user-message');
+            messageBox.innerHTML = `<strong>${currentUser} :</strong> ${message}`; // FAUTE DE SECURITE : injection brute du message
+
+            // Ajouter le message à l'affichage
+            document.getElementById('messages').appendChild(messageBox);
+
+            // Réinitialiser le champ du message
+            document.getElementById('message').value = '';
+        }
+    </script>
+
+</body>
+</html>
